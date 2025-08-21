@@ -25,7 +25,7 @@ pipeline {
                     set -euo pipefail
                     cd ${PROJECT_DIR}
                     echo "[INFO] Starting docker-compose"
-                    sudo docker compose -f ${COMPOSE_FILE} up --build --abort-on-container-exit --exit-code-from gtest
+                    sudo docker compose -f ${COMPOSE_FILE} up --build --abort-on-container-exit --exit-code-from rostests
                     echo "[INFO] Shutting down docker-compose"
                     sudo docker compose -f ${COMPOSE_FILE} down -v --remove-orphans
                 '''
