@@ -1,0 +1,53 @@
+version: "3.9"
+
+x-common-env: &common_env
+  PYTHONUNBUFFERED: "1"
+  LIBGL_ALWAYS_SOFTWARE: "1"
+  ROS_MASTER_URI: "http://ros2_ci:11311"
+
+services:
+  ros2_ci:
+    build: .
+    image: ros2_ci:latest
+    container_name: ros2_ci
+    environment:
+      <<: *common_env
+      DISPLAY: "${DISPLAY:-}"
+      QT_X11_NO_MITSHM: "1"
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    command: >
+      bash -lc "
+        source /opt/ros/galactic/setup.bash &&
+        source ~/ros2_ws/install/setup.bash &&
+        colcon build &&
+        source ~/ros2_ws/install/setup.bash &&
+        ros2 launch fastbot_gazebo one_fastbot_room.launch.py 
+      "
+
+  waypoints_action:
+    image: ros2_ci:latest
+    depends_on:
+      - ros2_ci
+    environment: *common_env
+    command: >
+      bash -lc "
+        source /opt/ros/galactic/setup.bash &&
+        source ~/ros2_ws/install/setup.bash &&
+        sleep 40 &&
+        ros2 run fastbot_waypoints fastbot_action_server
+      "
+
+  ros_tests:
+    image: ros2_ci:latest
+    depends_on:
+      - ros2_ci
+      - waypoints_action
+    environment: *common_env
+    command: >
+      bash -lc "
+        source /opt/ros/galactic/setup.bash &&
+        source ~/ros2_ws/install/setup.bash &&
+        sleep 45 &&
+        colcon test --packages-select fastbot_waypoints --event-handler=console_direct+
+      "
